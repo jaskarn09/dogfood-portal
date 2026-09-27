@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone
-from models import db, Project, Team, Event
+from models import db, Project, Team, TeamMember, Event
 from auth import require_login
 
 bp = Blueprint("projects", __name__)
@@ -84,3 +84,37 @@ def submit_project():
     db.session.add(project)
     db.session.commit()
     return jsonify(project_to_dict(project)), 201
+
+@bp.route("/api/projects/<project_id>", methods=["PATCH"])
+@require_login
+def edit_project(project_id):
+    user = request.current_user
+    project = Project.query.get(project_id)
+    if not project:
+        return jsonify({"error": "not found"}), 404
+
+    team = Team.query.get(project.team_id)
+    is_member = TeamMember.query.filter_by(team_id=team.id, user_id=user.id).first()
+    if not is_member:
+        return jsonify({"error": "forbidden"}), 403
+
+    event = Event.query.get(project.event_id)
+    now = datetime.now(timezone.utc)
+    close_at = event.submissions_close
+    if close_at.tzinfo is None:
+        close_at = close_at.replace(tzinfo=timezone.utc)
+    if now > close_at:
+        return jsonify({"error": "submissions closed for this event"}), 403
+
+    data = request.get_json(silent=True) or {}
+    if "title" in data:
+        project.title = data["title"]
+    if "summary" in data:
+        project.summary = data["summary"]
+    if "repo_url" in data:
+        project.repo_url = data["repo_url"]
+    if "status" in data and data["status"] in ("draft", "submitted"):
+        project.status = data["status"]
+
+    db.session.commit()
+    return jsonify(project_to_dict(project)), 200

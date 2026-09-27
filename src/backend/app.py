@@ -27,6 +27,9 @@ app.register_blueprint(teams_bp)
 from routes.judging import bp as judging_bp
 app.register_blueprint(judging_bp)
 
+from routes.auth_routes import bp as auth_routes_bp
+app.register_blueprint(auth_routes_bp)
+
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
