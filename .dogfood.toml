@@ -1,0 +1,19 @@
+[portal]
+base_url = "http://localhost:8080"
+
+[tiers]
+claimed = ["T1", "T2"]
+pitch = "A self-hosted hackathon submission and judging platform with role-isolated judging and CSV export."
+
+[auth]
+organizer   = "Cookie: session=org_seed_token_001"
+judge_a     = "Cookie: session=jdga_seed_token_001"
+judge_b     = "Cookie: session=jdgb_seed_token_001"
+participant = "Cookie: session=prt_seed_token_001"
+
+[routes]
+gallery      = "/api/projects"
+submit       = "/api/projects"
+judge_scores = "/api/judge/scores"
+peer_scores  = "/api/judge/scores?judge=jdg_24"
+csv_export   = "/api/export.csv"
