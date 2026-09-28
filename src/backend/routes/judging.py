@@ -1,7 +1,7 @@
 import csv
 import io
 from flask import Blueprint, request, jsonify, Response
-from models import db, Judge, Assignment, Score, Project, RubricCriterion, User, AuditLog
+from models import db, Judge, Assignment, Score, Project, RubricCriterion, User, AuditLog, Event, Track
 from auth import require_login, require_role
 from normalization import normalize_scores
 from audit import log_action
@@ -216,6 +216,7 @@ def my_assignments():
         already_scored = Score.query.filter_by(judge_id=judge_row.id, project_id=project.id).first() is not None
         result.append({
             "project_id": project.id,
+            "event_id": project.event_id,
             "title": project.title,
             "scored": already_scored,
         })
@@ -236,3 +237,35 @@ def audit_log():
         }
         for e in entries
     ])
+
+@bp.route("/api/judge/peers", methods=["GET"])
+@require_login
+def judge_peers():
+    """Hint only: names and tracks of fellow judges, and who added me. No emails, no scores."""
+    user = request.current_user
+    if user.role != "judge":
+        return jsonify({"error": "forbidden"}), 403
+
+    my_rows = Judge.query.filter_by(user_id=user.id).all()
+    if not my_rows:
+        return jsonify({"error": "forbidden"}), 403
+
+    result = []
+    for mine in my_rows:
+        event = Event.query.get(mine.event_id)
+        track_names = {t.id: t.name for t in Track.query.filter_by(event_id=mine.event_id).all()}
+        adder = User.query.get(mine.added_by) if mine.added_by else None
+        result.append({
+            "event_id": event.id,
+            "event_name": event.name,
+            "you_were_added_by": adder.name if adder else None,
+            "judges": [
+                {
+                    "name": User.query.get(j.user_id).name,
+                    "tracks": [track_names.get(t, t) for t in (j.tracks or "").split(",") if t],
+                    "is_you": j.user_id == user.id,
+                }
+                for j in Judge.query.filter_by(event_id=mine.event_id).all()
+            ],
+        })
+    return jsonify(result)

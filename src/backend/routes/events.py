@@ -76,16 +76,38 @@ def add_judge(event_id):
     if not user:
         return jsonify({"error": "no user with that email"}), 404
 
-    if user.role == "participant":
-        user.role = "judge"
+    if user.role in ("organizer", "admin"):
+        return jsonify({"error": "that account is an organizer and can't also be a judge"}), 400
+
+    user.role = "judge"
 
     if not Judge.query.filter_by(user_id=user.id, event_id=event_id).first():
         db.session.add(Judge(
             user_id=user.id,
             event_id=event_id,
             tracks=",".join(data.get("tracks", [])),
+            added_by=request.current_user.id,
         ))
 
     log_action(request.current_user, "judge_added", target=user.email)
     db.session.commit()
-    return jsonify({"status": "judge added", "email": user.email}), 200
+    return jsonify({"status": "judge added", "email": user.email, "role": user.role}), 200
+
+
+@bp.route("/api/events/<event_id>/judges", methods=["GET"])
+@require_login
+@require_role("organizer")
+def list_judges(event_id):
+    track_names = {t.id: t.name for t in Track.query.filter_by(event_id=event_id).all()}
+    result = []
+    for j in Judge.query.filter_by(event_id=event_id).all():
+        u = User.query.get(j.user_id)
+        adder = User.query.get(j.added_by) if j.added_by else None
+        result.append({
+            "name": u.name,
+            "email": u.email,
+            "role": u.role,
+            "added_by": adder.name if adder else None,
+            "tracks": [track_names.get(t, t) for t in (j.tracks or "").split(",") if t],
+        })
+    return jsonify(result)

@@ -85,7 +85,7 @@ class Judge(db.Model):
     tracks = db.Column(db.String, nullable=True)  
     fixture_id = db.Column(db.String, nullable=True)
     __table_args__ = (db.UniqueConstraint("user_id", "event_id"),)
-
+    added_by = db.Column(db.String, db.ForeignKey("users.id"), nullable=True)  # organizer who added this judge
 
 class Assignment(db.Model):
     __tablename__ = "assignments"
