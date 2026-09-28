@@ -13,13 +13,10 @@ def register():
     email = data.get("email")
     name = data.get("name")
     password = data.get("password")
-    role = data.get("role", "participant")
+    role = "participant"  # self-signup is always a participant; organizers promote judges
 
     if not email or not name or not password:
         return jsonify({"error": "email, name and password are required"}), 400
-
-    if role not in ("participant", "judge", "organizer"):
-        role = "participant"
 
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "an account with this email already exists"}), 400

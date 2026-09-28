@@ -46,7 +46,7 @@ def submit_project():
     user = request.current_user
 
     event_id = data.get("event_id")
-    event = Event.query.get(event_id) if event_id else Event.query.first()
+    event = Event.query.get(event_id) if event_id else Event.query.order_by(Event.submissions_close.asc()).first()
     if not event:
         return jsonify({"error": "no event found"}), 400
 
@@ -75,6 +75,7 @@ def submit_project():
     project = Project(
         event_id=event.id,
         team_id=team.id,
+        track_id=data.get("track_id"),
         title=data.get("title", "Untitled"),
         summary=data.get("summary"),
         repo_url=data.get("repo_url"),

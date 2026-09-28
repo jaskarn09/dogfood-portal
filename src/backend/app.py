@@ -1,12 +1,12 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-from models import db, Session, User
+from models import db
 from seed import run_seed
 from auth import get_current_user
-from routes.projects import bp as projects_bp
 
-app = Flask(__name__, static_folder="static", static_url_path="/")
+app = Flask(__name__, static_folder=None)
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 CORS(app, supports_credentials=True)
 
 database_url = os.environ.get(
@@ -30,6 +30,10 @@ app.register_blueprint(judging_bp)
 from routes.auth_routes import bp as auth_routes_bp
 app.register_blueprint(auth_routes_bp)
 
+from routes.events import bp as events_bp
+app.register_blueprint(events_bp)
+
+
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
@@ -40,7 +44,19 @@ def me():
     user = get_current_user()
     if not user:
         return jsonify({"error": "not logged in"}), 401
-    return jsonify({"id": user.id, "email": user.email, "role": user.role})
+    return jsonify({"id": user.id, "email": user.email, "name": user.name, "role": user.role})
+
+
+# Keep this LAST among the routes: it serves the React app for every non-API URL.
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_frontend(path):
+    if path.startswith("api/"):
+        return jsonify({"error": "not found"}), 404
+    full = os.path.join(STATIC_DIR, path)
+    if path and os.path.isfile(full):
+        return send_from_directory(STATIC_DIR, path)
+    return send_from_directory(STATIC_DIR, "index.html")
 
 
 if __name__ == "__main__":
