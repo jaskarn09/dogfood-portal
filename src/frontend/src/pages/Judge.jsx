@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-
-const btn = 'bg-slate-900 text-white rounded px-3 py-1 text-sm'
+import { Alert, Badge, EmptyState, PageHeader } from '../ui'
 
 export default function Judge() {
   const [assignments, setAssignments] = useState([])
@@ -59,71 +58,106 @@ export default function Judge() {
   }
 
   const done = assignments.filter(a => a.scored).length
+  const pct = assignments.length ? Math.round((done / assignments.length) * 100) : 0
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Judging</h1>
-      {msg && <p className="text-green-700 mb-3">{msg}</p>}
-      {error && <p className="text-red-600 mb-3">{error}</p>}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <PageHeader title="Judging" description="Score your assigned projects against the event rubric." />
 
-      <section className="border rounded-lg p-4 mb-6">
-        <h2 className="font-semibold mb-1">Your projects</h2>
-        <p className="text-sm text-slate-600 mb-3">{done} of {assignments.length} scored</p>
-        {assignments.length === 0 && (
-          <p className="text-sm text-slate-500">No projects assigned yet. Ask the organizer to run Assign judges.</p>
-        )}
-        {assignments.map(a => (
-          <div key={a.project_id} className="border-b last:border-0 py-3">
-            <div className="flex items-center gap-3">
-              <span className="font-medium">{a.title}</span>
-              <span className={a.scored ? 'text-green-700 text-sm' : 'text-slate-500 text-sm'}>
-                {a.scored ? 'scored' : 'to do'}
-              </span>
-              <button className={btn + ' ml-auto'} onClick={() => openForm(a)}>
-                {a.scored ? 'Edit score' : 'Score'}
-              </button>
-            </div>
-            {open === a.project_id && (
-              <div className="mt-3 space-y-3 bg-slate-50 rounded p-3">
-                {rubricFor(a).map(r => (
-                  <label key={r.name} className="flex items-center gap-3 text-sm">
-                    <span className="w-32">{r.name} (x{r.weight})</span>
-                    <select className="border rounded px-2 py-1" value={form[r.name] ?? 3}
-                            onChange={e => setForm({ ...form, [r.name]: e.target.value })}>
-                      {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                  </label>
-                ))}
-                <textarea className="border rounded px-3 py-2 w-full text-sm" rows="2"
-                          placeholder="Comment (optional)" value={comment}
-                          onChange={e => setComment(e.target.value)} />
-                <div className="flex gap-2">
-                  <button className={btn} onClick={() => save(a)}>Save score</button>
-                  <button className="text-sm underline" onClick={() => setOpen(null)}>Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="space-y-3 mb-6">
+        <Alert type="success">{msg}</Alert>
+        <Alert type="error">{error}</Alert>
+      </div>
+
+      <section className="card card-pad mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-ink">Your assignments</h2>
+          <span className="text-sm text-slate-500">{done} / {assignments.length} completed</span>
+        </div>
+
+        <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-1">
+          <div
+            className="h-full bg-brand-600 rounded-full transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </section>
 
+      {assignments.length === 0 ? (
+        <EmptyState
+          title="No projects assigned yet"
+          description="Ask the organizer to run Assign judges for your event."
+        />
+      ) : (
+        <section className="card divide-y divide-line mb-8">
+          {assignments.map(a => (
+            <div key={a.project_id} className="p-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-medium text-ink">{a.title}</span>
+                <Badge tone={a.scored ? 'submitted' : 'draft'}>
+                  {a.scored ? 'Scored' : 'To do'}
+                </Badge>
+                <button className="btn-secondary btn-sm ml-auto" onClick={() => openForm(a)}>
+                  {a.scored ? 'Edit score' : 'Score'}
+                </button>
+              </div>
+
+              {open === a.project_id && (
+                <div className="mt-4 space-y-4 bg-slate-50 rounded-xl p-4">
+                  {rubricFor(a).map(r => (
+                    <label key={r.name} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-ink-soft">{r.name} <span className="text-slate-400">(x{r.weight})</span></span>
+                      <select
+                        className="input w-24"
+                        value={form[r.name] ?? 3}
+                        onChange={e => setForm({ ...form, [r.name]: e.target.value })}
+                      >
+                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </label>
+                  ))}
+                  <textarea
+                    className="input"
+                    rows="2"
+                    placeholder="Comment (optional)"
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button className="btn-primary btn-sm" onClick={() => save(a)}>Save score</button>
+                    <button className="text-sm text-slate-500 hover:text-ink" onClick={() => setOpen(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
       {peers.map(p => (
-        <section key={p.event_id} className="border rounded-lg p-4 mb-6">
-          <h2 className="font-semibold mb-1">Judging panel: {p.event_name}</h2>
-          <p className="text-sm text-slate-600 mb-3">
+        <section key={p.event_id} className="card card-pad mb-6">
+          <h2 className="font-semibold text-ink mb-1">Judging panel: {p.event_name}</h2>
+          <p className="text-sm text-slate-500 mb-3">
             {p.you_were_added_by
               ? `You were added by ${p.you_were_added_by}.`
               : 'You were imported with the event data.'}
           </p>
-          <ul className="text-sm space-y-1 max-h-48 overflow-auto">
+          <ul className="text-sm space-y-1.5 max-h-48 overflow-auto">
             {p.judges.map((j, i) => (
-              <li key={i}>
-                {j.name}{j.is_you && <b> (you)</b>}
-                {j.tracks.length > 0 && <span className="text-slate-500"> · {j.tracks.join(', ')}</span>}
+              <li key={i} className="flex items-center gap-2">
+                <span className="text-ink">{j.name}</span>
+                {j.is_you && <Badge tone="info">You</Badge>}
+                {j.tracks.length > 0 && (
+                  <span className="text-slate-400">· {j.tracks.join(', ')}</span>
+                )}
               </li>
             ))}
           </ul>
-          <p className="text-xs text-slate-500 mt-2">You can see who else is judging, never their scores.</p>
+          <p className="text-xs text-slate-400 mt-3">
+            You can see who else is judging, never their scores.
+          </p>
         </section>
       ))}
     </div>
