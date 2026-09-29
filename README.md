@@ -1,71 +1,145 @@
 # DOGFOOD Portal
 
-A self-hostable hackathon submission and judging platform built for DOGFOOD 2026.
+A self-hostable hackathon submission and judging portal built for DOGFOOD 2026.
 
-The portal supports event creation, participant teams, project submissions, judge assignments, scoring, normalized results, CSV export, and audit logging.
+## Current Scope
 
-The project is designed to run locally with Docker and PostgreSQL without requiring cloud services or external APIs.
+This submission claims T1 and T2 only.
 
-## What It Supports
+The latest official acceptance checker result is:
 
-### Participants
+DOGFOOD 2026 acceptance report
+portal: http://localhost:8080
+claimed: T1 T2
+fixtures: fixtures.json
+
+T1  gallery is public ................. PASS
+T1  project from fixtures shown ....... PASS
+T1  closed event refuses submissions .. PASS
+T2  judge sees own scores ............. PASS
+T2  judge cannot see peer scores ...... PASS
+T2  participant blocked ............... PASS
+T2  csv export works .................. PASS
+
+claimed T1 T2, verified T1 T2
+
+The repository also contains an independent automated test suite with 20 passing tests.
+
+## Features
+
+### Public Gallery
+
+- Public project gallery
+- Search projects
+- Filter projects by track
+- Submitted projects are publicly visible
+- Draft projects remain private
+- Responsive React interface
+
+### Authentication
+
+- Participant registration
+- Login and logout
+- Organizer, judge, and participant roles
+- Database-backed session authentication
+- Bearer-token authentication support
+- Authenticated-user endpoint
+
+### Teams
+
+- Participants can create teams
+- Teams belong to an event
+- Team lead is recorded
+- Invite tokens are supported
+- Participants can join with an invite token
+- Maximum team size is four members
+- Team invite information is restricted to team members
+
+### Project Submission
 
 Participants can:
 
-- Sign up and log in
-- Create a team for an open event
-- Join an existing team using an invite token
-- See their team and members
-- Create a project draft
-- Edit a project before the deadline
+- Create draft projects
+- Edit projects before the deadline
+- Select an event
 - Select a track
-- Save a draft
+- Add a title
+- Add a summary
+- Add a repository URL
 - Submit a project
-- View submitted projects in the public gallery
 
-### Judges
+The backend enforces:
 
-Judges can:
+- Team membership
+- Team-lead requirements for project creation
+- Event existence
+- Submission deadlines
+- Closed-event protection
 
-- Log in
-- See assigned projects
-- Score projects using the event rubric
-- Add comments
-- Edit their own scores
-- See the judging panel for their event
+Draft projects do not appear in the public gallery.
 
-Judges cannot access another judge's scores.
-
-### Organizers
+### Organizer Dashboard
 
 Organizers can:
 
 - Create events
-- Define tracks
-- Define rubric criteria and weights
-- Add judges to events
+- Configure tracks
+- Configure rubric criteria and weights
+- Add judges
 - Assign judges to projects
-- View judging progress
+- Monitor judging progress
 - View normalized results
-- View the audit log
-- Export judging data as CSV
-- Mark results as published
+- Export CSV data
+- View audit information
+- Publish an event
+
+### Judge Dashboard
+
+Judges can:
+
+- View assigned projects
+- View their assignments
+- Score projects using the event rubric
+- Update their own scores
+- View their own score history
+
+Judge isolation is enforced in the backend. A judge cannot request another judge's score set. Participants are blocked from judge endpoints.
 
 ## Technology Stack
 
 ### Frontend
 
-- React 19
+- React
 - Vite
+- JavaScript
+- Tailwind CSS
+- @tailwindcss/vite
 - React Router
-- Tailwind CSS 4
+- ESLint
+
+Shared UI components are implemented in:
+
+src/frontend/src/ui.jsx
+
+The shared UI layer provides:
+
+- PageHeader
+- Badge
+- Alert
+- EmptyState
+- LoadingState
+- StatCard
+
+The design system, reusable styles, tokens, buttons, inputs, cards, badges, alerts, and tables are defined in:
+
+src/frontend/src/index.css
 
 ### Backend
 
 - Python
 - Flask
 - Flask-SQLAlchemy
-- PostgreSQL 16
+- PostgreSQL
 - psycopg2
 
 ### Infrastructure
@@ -73,45 +147,361 @@ Organizers can:
 - Docker
 - Docker Compose
 
-## Project Structure
+The Dockerfile uses a two-stage build. Node builds the React application and the Python image runs Flask with the built frontend.
 
-```text
+## Running with Docker
+
+From the repository root:
+
+docker compose up --build
+
+Then open:
+
+http://localhost:8080
+
+The Docker environment starts the Flask application and PostgreSQL database. The database is initialized automatically and the fixture data is seeded during startup.
+
+For a completely clean rebuild:
+
+docker compose down -v
+docker compose up --build
+
+The -v option removes the PostgreSQL volume and causes the application to create a fresh database and reseed the fixtures.
+
+## Development Mode
+
+Docker provides the backend and PostgreSQL while Vite can run the frontend separately.
+
+Terminal 1:
+
+docker compose up
+
+Backend:
+
+http://localhost:8080
+
+Terminal 2:
+
+cd src/frontend
+npm run dev
+
+Frontend:
+
+http://localhost:5173
+
+The Vite development server proxies /api requests to the Flask backend on port 8080.
+
+## Frontend Verification
+
+From src/frontend:
+
+npm run lint
+
+npm run build
+
+Both commands have been verified successfully for the current frontend.
+
+## Seeded Accounts
+
+The seed process creates test accounts for:
+
+- Organizer
+- Judge A
+- Judge B
+- Participant
+
+Seeded password:
+
+password123
+
+The acceptance checker uses the session tokens configured in .dogfood.toml.
+
+The checker does not perform the login flow. It attaches the configured authentication headers directly to its requests.
+
+## Acceptance Checker
+
+Run the official checker from the repository root:
+
+python run.py .dogfood.toml
+
+The checker verifies the claimed tiers.
+
+### T1
+
+- Gallery is public
+- A fixture project is visible
+- A closed event refuses participant submissions
+
+### T2
+
+- Judge can access their own scores
+- Judge cannot access another judge's scores
+- Participant cannot access judge endpoints
+- Organizer can export CSV
+
+The latest result is:
+
+claimed T1 T2, verified T1 T2
+
+The acceptance output is stored in:
+
+acceptance-report.txt
+
+## Automated Tests
+
+Run:
+
+python -m pytest -q
+
+The current result is:
+
+20 passed
+
+The tests cover:
+
+- Authentication and permissions
+- Organizer-only access
+- Judge score isolation
+- Participant blocking
+- Team creation
+- Team listing
+- Team member limits
+- Team invite privacy
+- Closed-event submission protection
+- Closed-event project editing protection
+- Draft creation
+- Project membership protection
+- Weighted score calculation
+- Normalization edge cases
+- Single-review judges
+- Flat or zero-variance judges
+- Different review counts
+
+The test suite currently produces SQLAlchemy LegacyAPIWarning messages for the legacy Query.get() API. These are warnings only and do not cause test failures.
+
+## API Overview
+
+### Authentication
+
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+GET /api/health
+
+### Events
+
+GET /api/events
+POST /api/events
+POST /api/events/<event_id>/publish
+POST /api/events/<event_id>/judges
+GET /api/events/<event_id>/judges
+POST /api/events/<event_id>/assignments
+
+### Teams
+
+POST /api/teams
+GET /api/teams/mine
+POST /api/teams/join
+GET /api/teams/<team_id>
+
+### Projects
+
+GET /api/projects
+GET /api/projects/mine
+POST /api/projects
+PATCH /api/projects/<project_id>
+
+The public gallery supports:
+
+GET /api/projects?search=...
+GET /api/projects?track=...
+
+### Judging
+
+GET /api/judge/assignments
+GET /api/judge/scores
+POST /api/judge/scores
+
+### Organizer
+
+GET /api/organizer/progress
+GET /api/organizer/results
+GET /api/export.csv
+GET /api/audit
+
+## Authentication and Role Isolation
+
+Authentication uses database-backed session tokens.
+
+The browser uses a session cookie named:
+
+session
+
+The backend also accepts bearer authentication.
+
+Authorization is enforced by the backend rather than relying only on the frontend.
+
+Examples:
+
+Participant accessing a judge endpoint returns 401 or 403.
+
+Judge B requesting Judge A's scores returns 403.
+
+The acceptance checker verifies these permission boundaries.
+
+## Project Lifecycle
+
+A project belongs to a team and an event.
+
+Supported states:
+
+draft
+submitted
+
+Draft projects can be edited before the deadline and are not shown in the public gallery.
+
+Submitted projects are shown in the public gallery and can be judged.
+
+The backend enforces event deadlines and team membership rules.
+
+Closed events reject project creation and project editing.
+
+## Judging System
+
+Each event contains rubric criteria with numeric weights.
+
+The default fixture rubric is:
+
+functionality = 1.0
+quality = 1.0
+innovation = 1.0
+
+Organizers can create events with different criteria and weights.
+
+### Weighted Score
+
+For every review:
+
+weighted review score = sum(criterion score × criterion weight)
+
+### Judge Normalization
+
+The system normalizes judge scoring styles before combining project reviews.
+
+For every judge it calculates:
+
+- Number of reviews
+- Mean
+- Population standard deviation
+
+The global mean and population standard deviation are calculated across all reviews.
+
+The implementation applies shrinkage:
+
+w = n / (n + 3)
+
+shrunk mean = w × judge mean + (1 - w) × global mean
+
+shrunk standard deviation = w × judge standard deviation + (1 - w) × global standard deviation
+
+Each weighted review is then converted into a z-score:
+
+z = (weighted score - shrunk judge mean) / shrunk judge standard deviation
+
+Zero variance is protected against division by zero.
+
+Project results include:
+
+- Normalized score
+- Raw average
+- Review count
+
+The normalization approach is intentionally deterministic and explainable rather than being presented as a statistical guarantee of fairness.
+
+More detail is available in JUDGING.md.
+
+## Judge Assignment
+
+The organizer can request a target review count.
+
+The assignment process:
+
+1. Loads submitted projects.
+2. Loads judges.
+3. Uses track information when available.
+4. Checks existing assignment counts.
+5. Orders eligible judges by current load.
+6. Assigns judges until the target review count is reached or eligible judges are exhausted.
+7. Prevents duplicate judge/project assignments.
+
+The organizer interface currently uses a target of three reviews when assigning judges.
+
+## CSV Export
+
+Organizer-only CSV export is available at:
+
+GET /api/export.csv
+
+The export contains:
+
+project_id
+title
+judge_id
+functionality
+quality
+innovation
+comment
+
+The CSV provides a raw-score view alongside the normalized organizer results.
+
+## Audit Trail
+
+Judging-related actions are recorded in the audit log.
+
+Examples include:
+
+- Score submission
+- Assignment creation
+
+Organizers can inspect recent audit information through the organizer interface and API.
+
+## Repository Structure
+
 dogfood-portal/
 ├── .dogfood.toml
 ├── acceptance-report.txt
-├── docker-compose.yml
-├── Dockerfile
-├── LICENSE
-├── README.md
 ├── ARCHITECTURE.md
 ├── DATA-MODEL.md
 ├── JUDGING.md
-├── run.py
+├── LICENSE
+├── README.md
+├── Dockerfile
+├── docker-compose.yml
 ├── fixtures.json
+├── run.py
 ├── spec.md
 ├── context.txt
-├── example.dogfood.toml
 ├── tests/
 │   ├── conftest.py
-│   ├── test_normalization.py
 │   ├── test_api_permissions.py
+│   ├── test_normalization.py
 │   └── test_projects_teams.py
 └── src/
     ├── backend/
     │   ├── app.py
-    │   ├── models.py
-    │   ├── seed.py
     │   ├── auth.py
     │   ├── audit.py
+    │   ├── models.py
     │   ├── normalization.py
+    │   ├── seed.py
     │   ├── requirements.txt
     │   └── routes/
     │       ├── auth_routes.py
     │       ├── events.py
+    │       ├── judging.py
     │       ├── projects.py
-    │       ├── teams.py
-    │       └── judging.py
-    │
+    │       └── teams.py
     └── frontend/
         ├── package.json
         ├── vite.config.js
@@ -122,429 +512,98 @@ dogfood-portal/
             ├── Navbar.jsx
             ├── api.js
             ├── index.css
+            ├── main.jsx
+            ├── ui.jsx
             └── pages/
                 ├── Gallery.jsx
-                ├── Login.jsx
-                ├── MyTeam.jsx
                 ├── JoinTeam.jsx
                 ├── Judge.jsx
+                ├── Login.jsx
+                ├── MyTeam.jsx
                 └── Organizer.jsx
-```
 
-## Running the Application
+## Documentation
 
-### Requirements
+ARCHITECTURE.md documents the frontend, backend, database, Docker architecture, authentication flow, and application data flow.
 
-The normal development workflow requires:
+DATA-MODEL.md documents the database tables, relationships, fixture import process, team and project structure, and CSV export.
 
-- Docker Desktop
-- Git
-- Node.js and npm
-- Python
+JUDGING.md documents judge assignment, rubric weights, weighted scoring, normalization, judge isolation, the audit trail, and known judging limitations.
 
-Docker is the main runtime used by the project.
+## Known Limitations
 
-### Start the Application
+This submission intentionally claims only T1 and T2.
 
-From the project root:
+Known limitations include:
 
-```powershell
+- T3 is not implemented
+- T4 is not implemented
+- No email verification
+- No password reset flow
+- Flask uses the built-in development server
+- Event publishing currently sets a publish flag rather than implementing a separate public-results publishing workflow
+- Judge assignment uses a deterministic greedy strategy rather than an optimization solver
+- Normalization is intentionally simple and explainable
+- No advanced statistical outlier detection is implemented
+- Hosted deployment is separate from the Docker and self-hosted deployment
+
+These limitations are documented intentionally rather than hidden.
+
+## Self-Hosted Requirement
+
+The primary deployment target is local self-hosting.
+
+The project is designed to run using:
+
 docker compose up --build
-```
 
-The portal will be available at:
-
-```text
-http://localhost:8080
-```
-
-The application creates the database tables and loads fixture data automatically when the database is initialized.
-
-### Frontend Development Mode
-
-For frontend development, use a second terminal:
-
-```powershell
-cd src\frontend
-npm install
-npm run dev
-```
-
-Vite runs the frontend on:
-
-```text
-http://localhost:5173
-```
-
-The Vite configuration proxies `/api` requests to:
-
-```text
-http://localhost:8080
-```
-
-## Resetting the Database
-
-To remove the PostgreSQL volume and recreate the seeded database:
-
-```powershell
-docker compose down -v
-docker compose up --build
-```
-
-The `-v` option removes the database volume, so fixture data will be imported again.
-
-## Seeded Accounts
-
-The development seed creates fixed test sessions.
-
-Default password for seeded accounts:
-
-```text
-password123
-```
-
-### Organizer
-
-```text
-Email: organizer@test.dev
-Password: password123
-```
-
-### Participant
-
-The seeded participant account is taken from the first member of the first fixture team.
-
-The fixed session token is:
-
-```text
-prt_seed_token_001
-```
-
-### Judge A
-
-```text
-Password: password123
-Cookie token: jdga_seed_token_001
-Fixture judge: jdg_24
-```
-
-### Judge B
-
-```text
-Password: password123
-Cookie token: jdgb_seed_token_001
-Fixture judge: jdg_26
-```
-
-The exact participant email is determined from `fixtures.json` during seeding.
-
-## Authentication
-
-The application uses a custom database-backed session system rather than Flask's built-in session.
-
-Authentication can use a session cookie or a Bearer header.
-
-Protected API requests return JSON `401` or `403` responses rather than redirecting to a login page.
-
-## Main API Areas
-
-### Authentication
-
-```text
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
-GET  /api/health
-```
-
-### Events
-
-```text
-GET  /api/events
-POST /api/events
-POST /api/events/<event_id>/publish
-GET  /api/events/<event_id>/judges
-POST /api/events/<event_id>/judges
-```
-
-### Teams
-
-```text
-POST /api/teams
-GET  /api/teams/mine
-GET  /api/teams/<team_id>
-POST /api/teams/join
-```
-
-### Projects
-
-```text
-GET   /api/projects
-GET   /api/projects/mine
-POST  /api/projects
-PATCH /api/projects/<project_id>
-```
-
-### Judging
-
-```text
-GET  /api/judge/assignments
-GET  /api/judge/scores
-POST /api/judge/scores
-GET  /api/judge/peers
-```
-
-### Organizer
-
-```text
-GET  /api/organizer/progress
-GET  /api/organizer/results
-GET  /api/organizer/audit
-GET  /api/export.csv
-POST /api/events/<event_id>/assignments
-```
-
-## Participant Workflow
-
-The normal participant workflow is:
-
-```text
-Organizer creates an open event
-        ↓
-Participant opens My Team
-        ↓
-Participant creates a team
-        ↓
-Participant shares the invite link
-        ↓
-Other participants join the team
-        ↓
-Team lead creates a project draft
-        ↓
-Team lead edits the project
-        ↓
-Team lead submits the project
-        ↓
-Submitted project appears in the public gallery
-```
-
-The fixture event is intentionally closed. To demonstrate a new participant submission, the organizer should create a new event with a future submission deadline.
-
-## Judging Workflow
-
-The judging workflow is:
-
-```text
-Organizer creates event
-        ↓
-Organizer adds judges
-        ↓
-Organizer assigns judges to projects
-        ↓
-Judge opens assigned projects
-        ↓
-Judge submits scores and comments
-        ↓
-Organizer views progress
-        ↓
-Organizer views normalized results
-        ↓
-Organizer can export CSV
-```
-
-## Running the Acceptance Checker
-
-The official acceptance checker can be run from the project root:
-
-```powershell
-python run.py .dogfood.toml
-```
-
-To save the output to the required report file:
-
-```powershell
-python run.py .dogfood.toml | Out-File -Encoding utf8 acceptance-report.txt
-```
-
-The project claims:
-
-```text
-T1 T2
-```
-
-The acceptance checker verifies seven checks:
-
-```text
-T1 gallery is public
-T1 project from fixtures shown
-T1 closed event refuses submissions
-T2 judge sees own scores
-T2 judge cannot see peer scores
-T2 participant blocked
-T2 csv export works
-```
-
-## Running Tests
-
-From the project root:
-
-```powershell
-python -m pytest -q
-```
-
-The current test suite covers:
-
-- Authentication and permission checks
-- Judge score isolation
-- CSV authorization
-- Team membership
-- Team size limits
-- Team invite access
-- Project permissions
-- Deadline enforcement
-- Draft creation
-- Project editing
-- Normalization edge cases
-
-## Frontend Checks
-
-From:
-
-```text
-src\frontend
-```
-
-run:
-
-```powershell
-npm run lint
-```
-
-and:
-
-```powershell
-npm run build
-```
-
-Both should complete without errors.
-
-## Docker Verification
-
-For a clean local verification:
-
-```powershell
-docker compose down -v
-docker compose up --build
-```
-
-Then verify:
-
-```text
-http://localhost:8080
-```
-
-The application should start with its PostgreSQL database and seeded fixture data.
-
-## Offline Operation
-
-After the Docker images and dependencies have already been built, the application is intended to operate without network access during normal local use.
-
-The application does not require:
+without requiring:
 
 - Cloud accounts
 - Hosted databases
 - External APIs
-- Hosted judging services
+- Third-party authentication services
 
-## Fixture Data
+The public deployment, if configured, is an additional demonstration environment and does not replace the Docker deployment.
 
-The seed process reads:
+## Public Demo
 
-```text
-fixtures.json
-```
+Live Demo:
 
-and loads the event, tracks, judges, teams, projects, assignments, scores, and related data.
+TBD
 
-A duplicate project exists in the source fixture:
+The Docker deployment remains the canonical self-hosted version of the project.
 
-```text
-prj_07
-prj_41
-```
+## Demo Video
 
-Both belong to the same team.
+The final demo should show one complete event lifecycle:
 
-The seed keeps the latest project record and skips the older duplicate so that the database's unique team/event constraint remains valid.
+1. Organizer creates an event.
+2. Participant creates a team.
+3. Participant creates a project.
+4. Participant submits the project.
+5. Organizer adds and assigns judges.
+6. Judge opens an assignment.
+7. Judge submits a score.
+8. Organizer views judging progress.
+9. Organizer views normalized results.
+10. Organizer exports CSV.
+11. Role isolation is demonstrated.
+12. The acceptance report is shown.
 
 ## License
 
 This project is released under the MIT License.
 
-See:
+See LICENSE for the complete license text.
 
-```text
-LICENSE
-```
+## DOGFOOD 2026
 
-## Known Limitations
+Built for DOGFOOD 2026 as a self-hostable submission and judging portal.
 
-This implementation intentionally focuses on the T1 and T2 scope.
+Current verified scope:
 
-Known limitations include:
-
-- T3 and T4 are not implemented.
-- The backend uses Flask's development server rather than a production WSGI server.
-- There is no email verification system.
-- There is no password reset flow.
-- The event `published` flag currently records the publish action but does not independently control the public gallery.
-- Database tables are created using `db.create_all()` rather than a migration system such as Alembic.
-- The project is primarily designed for the DOGFOOD 2026 hackathon and local/self-hosted execution.
-
-## T1 / T2 Scope
-
-The project claims:
-
-```text
-T1
-T2
-```
-
-The goal is to provide a working self-hostable submission and judging platform with:
-
-- Authentication and role enforcement
-- Event management
-- Team formation
-- Project draft/edit/submit workflow
-- Public project gallery
-- Judge assignment
-- Judge scoring
-- Judge isolation
-- Normalized results
-- CSV export
-- Audit logging
-- Docker-based local deployment
-
-## Final Verification Checklist
-
-Before submitting the project:
-
-```text
-[ ] docker compose down -v
-[ ] docker compose up --build
-[ ] Portal loads at localhost:8080
-[ ] Participant workflow works
-[ ] Judge workflow works
-[ ] Organizer workflow works
-[ ] python -m pytest -q
-[ ] npm run lint
-[ ] npm run build
-[ ] python run.py .dogfood.toml
-[ ] acceptance-report.txt updated
-[ ] Offline test completed
-[ ] Fresh clone test completed
-[ ] Demo video recorded
-[ ] Final git commit created
-[ ] Changes pushed to GitHub
-```
+Claimed tiers: T1 T2
+Verified tiers: T1 T2
+Acceptance checks: 7/7
+Automated tests: 20 passed
