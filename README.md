@@ -105,6 +105,66 @@ Judges can:
 
 Judge isolation is enforced in the backend. A judge cannot request another judge's score set. Participants are blocked from judge endpoints.
 
+## Screenshots
+
+### Main Dashboard
+
+![Main Dashboard](screenshots/MAIN%20DASHBOARD.png)
+
+The Main Dashboard serves as the public entry point to the platform. Users can browse hackathon projects, view project information, search submissions, and explore available tracks without requiring authentication. This page demonstrates the public gallery functionality required by DOGFOOD.
+
+---
+
+### User Registration
+
+![Signup](screenshots/SIGNUP.png)
+
+New participants can create accounts through the registration page. The system supports role-based access control and provides separate experiences for participants, judges, and organizers after authentication.
+
+---
+
+### Organizer Dashboard
+
+![Organizer Dashboard](screenshots/ORGANIZER%20DASHBOARD.png)
+
+The Organizer Dashboard allows event administrators to manage hackathons, create events, configure tracks, define rubric criteria, assign judges, review submissions, publish results, and export judging data. This dashboard acts as the central control panel for event management.
+
+---
+
+### Project Submission and Draft Workflow
+
+![Submit Project](screenshots/SUBMIT%20OR%20SAVING%20AS%20DRAFT.png)
+
+Participants can create project submissions, save drafts, update project details before the submission deadline, and manage repository links and project metadata. Once the event closes, backend validation prevents further modifications.
+
+---
+
+### Judge Scoring Interface
+
+![Judge Scoring](screenshots/SCORE.png)
+
+Judges evaluate assigned projects using the event rubric. Scores are submitted per criterion and stored independently. Judges can only access their own evaluations, ensuring scoring privacy and preventing peer-score visibility.
+
+---
+
+### Audit Log
+
+![Audit Log](screenshots/AUDIT%20LOG.png)
+
+The Audit Log records important platform actions for transparency and traceability. Administrative operations, project updates, judging actions, and event-related changes can be tracked to provide accountability throughout the judging process.
+
+---
+
+### API Permission Testing
+
+![Thunder Client Test](screenshots/THUNDER%20CLIENT%20TEST.png)
+
+Thunder Client was used to validate backend authorization rules and acceptance requirements. API testing confirms that role-based access restrictions are enforced on the server side, including protections that prevent judges from viewing other judges' scores and participants from accessing restricted resources.
+
+---
+
+These screenshots demonstrate the complete lifecycle of the DOGFOOD Portal: participant registration, project submission, organizer management, judging workflow, auditability, and backend security enforcement.
+
 ## Technology Stack
 
 ### Frontend
@@ -482,6 +542,7 @@ dogfood-portal/
 ├── run.py
 ├── spec.md
 ├── context.txt
+├── screenshots/
 ├── tests/
 │   ├── conftest.py
 │   ├── test_api_permissions.py
@@ -545,7 +606,6 @@ Known limitations include:
 - Judge assignment uses a deterministic greedy strategy rather than an optimization solver
 - Normalization is intentionally simple and explainable
 - No advanced statistical outlier detection is implemented
-- Hosted deployment is separate from the Docker and self-hosted deployment
 
 These limitations are documented intentionally rather than hidden.
 
@@ -563,33 +623,6 @@ without requiring:
 - Hosted databases
 - External APIs
 - Third-party authentication services
-
-The public deployment, if configured, is an additional demonstration environment and does not replace the Docker deployment.
-
-## Public Demo
-
-Live Demo:
-
-TBD
-
-The Docker deployment remains the canonical self-hosted version of the project.
-
-## Demo Video
-
-The final demo should show one complete event lifecycle:
-
-1. Organizer creates an event.
-2. Participant creates a team.
-3. Participant creates a project.
-4. Participant submits the project.
-5. Organizer adds and assigns judges.
-6. Judge opens an assignment.
-7. Judge submits a score.
-8. Organizer views judging progress.
-9. Organizer views normalized results.
-10. Organizer exports CSV.
-11. Role isolation is demonstrated.
-12. The acceptance report is shown.
 
 ## License
 

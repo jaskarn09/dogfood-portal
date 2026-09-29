@@ -6,7 +6,7 @@ DOGFOOD Portal is a self-hostable web application for hackathon submissions and 
 
 The system is divided into three main layers:
 
-```text
+```
 React + Vite + Tailwind
         |
         | HTTP / JSON
@@ -24,7 +24,7 @@ The application is designed to work locally without cloud accounts, hosted datab
 
 ## High-Level Architecture
 
-```text
+```
 Browser
    |
    | HTTP
@@ -64,13 +64,13 @@ The frontend is built with:
 
 The frontend source is located at:
 
-```text
+```
 src/frontend/src/
 ```
 
 Main files include:
 
-```text
+```
 App.jsx
 AuthContext.jsx
 Navbar.jsx
@@ -80,13 +80,13 @@ index.css
 
 Page components are located under:
 
-```text
+```
 src/frontend/src/pages/
 ```
 
 Current pages are:
 
-```text
+```
 Gallery.jsx
 Login.jsx
 MyTeam.jsx
@@ -101,7 +101,7 @@ Organizer.jsx
 
 Current routes are:
 
-```text
+```
 /                   Public project gallery
 /login              Login and registration
 /team               Participant team/project workspace
@@ -127,7 +127,7 @@ The context is responsible for:
 
 On startup, the frontend requests:
 
-```text
+```
 GET /api/auth/me
 ```
 
@@ -135,7 +135,7 @@ to determine whether the browser already has a valid session.
 
 The current user object contains:
 
-```text
+```
 id
 email
 name
@@ -161,7 +161,7 @@ The helper:
 
 The frontend communicates with the backend through paths beginning with:
 
-```text
+```
 /api
 ```
 
@@ -169,13 +169,13 @@ The frontend communicates with the backend through paths beginning with:
 
 During frontend development, Vite proxies `/api` requests to:
 
-```text
+```
 http://localhost:8080
 ```
 
 This allows the frontend to call:
 
-```text
+```
 /api/events
 /api/projects
 /api/auth/me
@@ -195,7 +195,7 @@ The backend is implemented with:
 
 The main application entry point is:
 
-```text
+```
 src/backend/app.py
 ```
 
@@ -215,7 +215,7 @@ The backend provides JSON APIs and also serves the built React frontend in the D
 
 The database connection is read from:
 
-```text
+```
 DATABASE_URL
 ```
 
@@ -227,13 +227,13 @@ Routes are separated into blueprints.
 
 ### Authentication
 
-```text
+```
 src/backend/routes/auth_routes.py
 ```
 
 Handles:
 
-```text
+```
 POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
@@ -241,7 +241,7 @@ POST /api/auth/logout
 
 ### Events
 
-```text
+```
 src/backend/routes/events.py
 ```
 
@@ -255,7 +255,7 @@ Handles:
 
 ### Teams
 
-```text
+```
 src/backend/routes/teams.py
 ```
 
@@ -268,7 +268,7 @@ Handles:
 
 ### Projects
 
-```text
+```
 src/backend/routes/projects.py
 ```
 
@@ -284,7 +284,7 @@ Handles:
 
 ### Judging
 
-```text
+```
 src/backend/routes/judging.py
 ```
 
@@ -307,7 +307,7 @@ It does not use Flask's built-in session mechanism.
 
 The main authentication flow is:
 
-```text
+```
 Login request
     |
     v
@@ -334,13 +334,13 @@ Find User
 
 The backend also accepts:
 
-```text
+```
 Authorization: Bearer <token>
 ```
 
 The authentication helpers are located in:
 
-```text
+```
 src/backend/auth.py
 ```
 
@@ -350,7 +350,7 @@ Authorization is enforced in the backend.
 
 The application uses:
 
-```text
+```
 require_login
 require_role(...)
 ```
@@ -359,7 +359,7 @@ The backend checks the authenticated user's role before allowing access to prote
 
 Examples:
 
-```text
+```
 Organizer-only:
 POST /api/events
 POST /api/events/<id>/assignments
@@ -383,13 +383,13 @@ The database layer uses Flask-SQLAlchemy.
 
 The model definitions are located in:
 
-```text
+```
 src/backend/models.py
 ```
 
 The main entities are:
 
-```text
+```
 User
 Session
 Event
@@ -406,7 +406,7 @@ AuditLog
 
 A detailed description of the schema is provided in:
 
-```text
+```
 DATA-MODEL.md
 ```
 
@@ -430,13 +430,13 @@ This keeps initial self-hosted setup simple for the hackathon.
 
 The seed system is implemented in:
 
-```text
+```
 src/backend/seed.py
 ```
 
 and reads:
 
-```text
+```
 fixtures.json
 ```
 
@@ -462,7 +462,7 @@ Once the database already contains an event, the seed process skips re-importing
 
 A participant project follows this lifecycle:
 
-```text
+```
 No Project
     |
     v
@@ -481,7 +481,7 @@ Projects have a unique `(team_id, event_id)` constraint, so a team cannot create
 
 The public gallery only returns:
 
-```text
+```
 status = submitted
 ```
 
@@ -495,13 +495,13 @@ A team belongs to an event.
 
 Team membership is represented through:
 
-```text
+```
 team_members
 ```
 
 The user who creates a team becomes:
 
-```text
+```
 lead_user_id
 ```
 
@@ -515,13 +515,13 @@ The backend enforces the four-member maximum when joining an existing team.
 
 An event contains:
 
-```text
+```
 Event
- ├── Tracks
- ├── Rubric Criteria
- ├── Judges
- ├── Teams
- └── Projects
+ |-- Tracks
+ |-- Rubric Criteria
+ |-- Judges
+ |-- Teams
+ `-- Projects
 ```
 
 The event's `submissions_close` value is used by the project API to enforce the submission deadline.
@@ -534,7 +534,7 @@ The current public gallery does not independently hide or reveal projects based 
 
 The judging system is composed of:
 
-```text
+```
 Event
    |
    +---- Judges
@@ -560,7 +560,7 @@ The normalized ranking is calculated by the normalization module.
 
 Detailed judging behavior is documented in:
 
-```text
+```
 JUDGING.md
 ```
 
@@ -570,7 +570,7 @@ Judge score requests are scoped to the currently authenticated judge.
 
 The backend verifies that:
 
-```text
+```
 requested judge == authenticated judge
 ```
 
@@ -586,13 +586,13 @@ The permission boundary is enforced in Flask rather than relying on React visibi
 
 Normalization is implemented in:
 
-```text
+```
 src/backend/normalization.py
 ```
 
 The pipeline is:
 
-```text
+```
 Raw judge criteria
         |
         v
@@ -622,7 +622,7 @@ The raw average and review count are retained alongside the normalized score.
 
 The organizer dashboard communicates with several organizer APIs:
 
-```text
+```
 GET  /api/events
 POST /api/events
 POST /api/events/<id>/publish
@@ -643,7 +643,7 @@ The public gallery is available without authentication.
 
 The frontend requests:
 
-```text
+```
 GET /api/projects
 ```
 
@@ -651,7 +651,7 @@ The backend only returns submitted projects.
 
 The gallery supports:
 
-```text
+```
 ?search=
 ?track=
 ```
@@ -664,13 +664,13 @@ Track filtering is performed using the project's track ID.
 
 The backend records selected important actions using:
 
-```text
+```
 src/backend/audit.py
 ```
 
 Examples include:
 
-```text
+```
 event_created
 judge_added
 assignments_created
@@ -680,7 +680,7 @@ results_published
 
 The organizer can retrieve the audit log through:
 
-```text
+```
 GET /api/organizer/audit
 ```
 
@@ -688,7 +688,7 @@ GET /api/organizer/audit
 
 Docker Compose defines two main services:
 
-```text
+```
 db
 app
 ```
@@ -697,7 +697,7 @@ app
 
 The database service runs:
 
-```text
+```
 PostgreSQL 16
 ```
 
@@ -709,7 +709,7 @@ The application image uses a two-stage build.
 
 The first stage:
 
-```text
+```
 Node
 ```
 
@@ -717,7 +717,7 @@ builds the React frontend.
 
 The second stage:
 
-```text
+```
 Python 3.12-slim
 ```
 
@@ -725,17 +725,19 @@ copies the built frontend into the backend image.
 
 The resulting container runs the Flask application on:
 
-```text
+```
 port 8080
 ```
 
 At startup the application:
 
-```text
+```
 creates database tables
-        ↓
+        |
+        v
 runs the seed process
-        ↓
+        |
+        v
 starts Flask
 ```
 
@@ -745,7 +747,7 @@ The Flask application then serves the React build and API routes from the same c
 
 During development, two processes can be used:
 
-```text
+```
 Terminal 1
 docker compose up
         |
@@ -758,7 +760,7 @@ localhost:8080
 
 and:
 
-```text
+```
 Terminal 2
 cd src/frontend
 npm run dev
@@ -780,7 +782,7 @@ For a production-style local test, the frontend is built into the Docker image.
 
 The workflow is:
 
-```text
+```
 npm/Vite build
       |
       v
@@ -800,13 +802,13 @@ localhost:8080
 
 The automated tests are located under:
 
-```text
+```
 tests/
 ```
 
 Current test groups include:
 
-```text
+```
 test_normalization.py
 test_api_permissions.py
 test_projects_teams.py
@@ -837,13 +839,13 @@ The SQLite database exists only for isolated automated testing.
 
 The official checker communicates with the running portal through configured cookies from:
 
-```text
+```
 .dogfood.toml
 ```
 
 The checker verifies seven behaviors:
 
-```text
+```
 T1:
 1. Public gallery returns 200
 2. Fixture project is visible
@@ -858,7 +860,7 @@ T2:
 
 The current project claims:
 
-```text
+```
 T1 T2
 ```
 
@@ -868,7 +870,7 @@ Protected API routes return JSON errors.
 
 Typical responses include:
 
-```text
+```
 401 - not logged in
 403 - forbidden
 404 - not found
@@ -883,7 +885,7 @@ The application deliberately avoids redirecting API requests to HTML login pages
 
 The major security boundaries are:
 
-```text
+```
 Frontend
     |
     | user experience only
@@ -936,7 +938,7 @@ Known limitations include:
 
 The system architecture can be summarized as:
 
-```text
+```
                     DOGFOOD PORTAL
                           |
           +---------------+---------------+
